@@ -11,3 +11,8 @@ pom.xml.asc
 .hgignore
 .hg/
 http-settings.edn
+
+
+
+# this is just temporary for testing from docker
+.idea

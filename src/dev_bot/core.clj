@@ -42,7 +42,7 @@
                        (format "git checkout -b %s" branch)
                        "git add -A"
                        (format "git commit -m '%s'" title)
-                       "git push"
+                       (format "git push origin %s" branch)
                        ]
            ]
       (do
