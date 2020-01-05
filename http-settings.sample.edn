@@ -1,4 +1,5 @@
 {
  :url "https://api.github.com"
+ :issue-path "/repos/klapuch/dev-bot/issues"
  :headers {"Authorization" "token XXXXX"}
 }
