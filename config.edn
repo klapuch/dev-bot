@@ -1,0 +1,12 @@
+{
+ :repository "git@github.com:klapuch/dev-bot.git"
+ :fix-branch "bot/fixes"
+ :dir "/tmp/dev-bot_projects"
+ :commands {
+  :phpstan {:command "(cd /tmp && ls -la)" :type :check :title "Command PHPStan failed"}
+  :phpcs {:command "(cd /tmp && ls)" :type :check :title "CS: Command PHPCS failed"}
+  :phpcbf {:command "" :type :fix :title "CS: PHPCBF fixes"}
+  :eslint {:command "(cd /tmp && ls -l)" :type :check :title "CS: eslint failed"}
+  :eslintFix {:command "" :type :fix :title "CS: eslint fixes"}
+ }
+}

@@ -1,0 +1,4 @@
+{
+ :url "https://api.github.com"
+ :headers {"Authorization" "token XXXXX"}
+}
