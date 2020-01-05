@@ -1,12 +1,11 @@
 {
  :repository "git@github.com:klapuch/dev-bot.git"
- :fix-branch "bot/fixes"
  :dir "/tmp/dev-bot_projects"
  :commands {
   :phpstan {:command "(cd /tmp && ls -la)" :branch "master" :title "Command PHPStan failed"}
-  :phpcs {:command "(cd /tmp && ls)" :branch "bot/phpcs" :title "CS: Command PHPCS failed"}
-  :phpcbf {:command "" :branch "bot/phpcs" :title "CS: PHPCBF fixes"}
-  :eslint {:command "(cd /tmp && ls -l)" :branch "bot/eslint" :title "CS: eslint failed"}
-  :eslintFix {:command "" :branch "bot/eslint" :title "CS: eslint fixes"}
+  :phpcs {:command "(cd /tmp && ls)" :branch "bot-phpcs" :title "CS: Command PHPCS failed"}
+  :phpcbf {:command "" :branch "bot-phpcs" :title "CS: PHPCBF fixes"}
+  :eslint {:command "(cd /tmp && ls -l)" :branch "bot-eslint" :title "CS: eslint failed"}
+  :eslintFix {:command "" :branch "bot-eslint" :title "CS: eslint fixes"}
  }
 }

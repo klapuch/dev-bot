@@ -24,18 +24,51 @@
 
   (defn code-text [text] (format "```%s```" text))
 
-  (def issues-url
-    (let [{url :url issue-path :issue-path} http-settings]
-      (format "%s/%s" url issue-path)
-  ))
+  (defn checkout-branch! [name] (run-shell-cmd (format "git checkout %s" name)))
+  (defn checkout-cmd-branch! [name] (checkout-branch! (:branch (name (:commands config)))))
 
-;  (sh run-shell-cmd (format "git checkout %s" (:fix-branch config)))
+  (defn with-api-path [path] (format "%s/%s" (:url http-settings) path))
 
-  (defn send-pull-request! [body title] (print body))
+  (def issues-url (with-api-path (:issue-path http-settings)))
+  (def pull-request-url (with-api-path (:pull-request-path http-settings)))
 
-  (defn list-my-issues
+  (defn format-branch [username branch] (format "%s:%s" username branch))
+
+  (defn send-pull-request!
+    [title branch]
+    (let [
+           {url :url headers :headers pull-request-path :pull-request-path user :user} http-settings
+           commnands [
+                       (format "git checkout -b %s" branch)
+                       "git add -A"
+                       (format "git commit -m '%s'" title)
+                       "git push"
+                       ]
+           ]
+      (do
+        (run-shell-cmd (str/join " && " commnands))
+      (client/post
+       pull-request-url
+       {:headers headers
+        :content-type :json
+        :body (json/generate-string {:title title :head (format-branch "klapuch" branch) :base "master"})}
+       )
+        )
+      ))
+
+  (defn my-issues
     []
     (let [{body :body} (client/get (format "%s?%s" issues-url (to-query-params {"filter" "created" "state" "open"})))]
+      (json/parse-string body true)
+  ))
+
+  (defn my-pull-requests
+    [name]
+    (let [
+           {user :user} http-settings
+           {branch :branch} (name (:commands config))
+           {body :body} (client/get (format "%s?%s" pull-request-url (to-query-params {"head" (format-branch user branch) "state" "open"})))
+           ]
       (json/parse-string body true)
   ))
 
@@ -50,6 +83,8 @@
       )))
     )
 
+  (defn pull-request-created?[pull-requests] (not-empty? pull-requests))
+
   (defn create-issue!
     [body title]
     (let [{url :url headers :headers issue-path :issue-path} http-settings]
@@ -63,16 +98,23 @@
 
   (defn check!
     [name action]
-    (if-not (issue-created? (list-my-issues) name)
-            (let [{cmd :command title :title} (name (:commands config))
-                  {exit :exit output :out}    (run-shell-cmd cmd)]
-              (if
-                (not= exit 0) (action output title))
-  )))
+    (if-not (and (pull-request-created? (my-pull-requests name)) (issue-created? (my-issues) name))
+            (do
+              (checkout-cmd-branch! name)
+              (let [{cmd :command title :title} (name (:commands config))
+                    {exit :exit output :out}    (run-shell-cmd cmd)]
+                (if
+                  (not= exit 0) (action output title))
+              )
+              )
+  ))
 
-  (check! :phpstan create-issue!)
-  (check! :phpcs create-issue!)
-  (check! :eslint create-issue!)
+
+  (send-pull-request! "test" "bot-phpcs")
+;  (check! :phpcs #(send-pull-request! %2 "bot-phpcs"))
+;  (check! :phpstan create-issue!)
+;  (check! :phpcs create-issue!)
+;  (check! :eslint create-issue!)
 
   (shutdown-agents)
 )
