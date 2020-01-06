@@ -33,20 +33,23 @@
 
   (defn format-branch [username branch] (format "%s:%s" username branch))
 
+  (defn prepare-pull-request-branch
+    [branch message]
+    (let [commands [
+      "git checkout master"
+      (format "git checkout -b %s" branch)
+      "git add -A"
+      (format "git commit -m '%s'" message)
+      (format "git push origin %s" branch)]]
+
+      (str/join " && " commands)
+    ))
+
   (defn send-pull-request!
     [title branch]
-    (let [
-      {url :url headers :headers pull-request-path :pull-request-path user :user} http-settings
-      commands [
-        "git checkout master"
-        (format "git checkout -b %s" branch)
-        "git add -A"
-        (format "git commit -m '%s'" title)
-        (format "git push origin %s" branch)
-      ]
-    ]
+    (let [{url :url headers :headers pull-request-path :pull-request-path user :user} http-settings]
       (do
-        (run-shell-cmd (str/join " && " commands))
+        (run-shell-cmd (prepare-pull-request-branch branch title))
         (client/post
          pull-request-url
          {:headers headers
