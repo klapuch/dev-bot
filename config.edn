@@ -4,7 +4,7 @@
  :user "klapuch"
  :clone-dir "/tmp/dev-bot"
  :commands {
-  :composer-outdated {:command "echo 'composer-outdated'" :title "Composer: outdated packages"}
+  :composer-outdated {:command "echo 'composer-outdated'" :branch "master" :title "Composer: outdated packages"}
   :phpstan {:command "echo 'phpstan'" :branch "master" :title "Command PHPStan failed"}
   :phpcs {:command "echo 'phpcs'" :branch "bot-phpcs" :title "CS: Command PHPCS failed"}
   :phpcbf {:command "echo 'phpcbf'" :branch "bot-phpcs" :title "CS: PHPCBF fixes"}
