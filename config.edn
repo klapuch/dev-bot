@@ -4,11 +4,11 @@
  :user "klapuch"
  :clone-dir "/tmp/dev-bot"
  :commands {
-  :composer-outdated {:command "(cd /tmp && ls -la)" :title "Composer: outdated packages"}
-  :phpstan {:command "(cd /tmp && ls -la)" :branch "master" :title "Command PHPStan failed"}
-  :phpcs {:command "(cd /tmp && ls)" :branch "bot-phpcs" :title "CS: Command PHPCS failed"}
-  :phpcbf {:command "" :branch "bot-phpcs" :title "CS: PHPCBF fixes"}
-  :eslint {:command "(cd /tmp && ls -l)" :branch "bot-eslint" :title "CS: eslint failed"}
-  :eslint-fix {:command "" :branch "bot-eslint" :title "CS: eslint fixes"}
+  :composer-outdated {:command "echo 'composer-outdated'" :title "Composer: outdated packages"}
+  :phpstan {:command "echo 'phpstan'" :branch "master" :title "Command PHPStan failed"}
+  :phpcs {:command "echo 'phpcs'" :branch "bot-phpcs" :title "CS: Command PHPCS failed"}
+  :phpcbf {:command "echo 'phpcbf'" :branch "bot-phpcs" :title "CS: PHPCBF fixes"}
+  :eslint {:command "echo 'eslint'" :branch "bot-eslint" :title "CS: eslint failed"}
+  :eslint-fix {:command "echo 'eslint-fix'" :branch "bot-eslint" :title "CS: eslint fixes"}
  }
 }

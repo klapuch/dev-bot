@@ -19,8 +19,8 @@
 
 
   ;; load configs
-  (def config (load-file "config.edn"))
-  (def http-settings (load-file "http-settings.edn"))
+  (def config (load-file "config.edn")) ;; TODO: __DIR__
+  (def http-settings (load-file "http-settings.edn")) ;; TODO: __DIR__
 
   (defn git-clone [repository dir] (run-shell-cmd (format "git clone --branch=master %s %s" repository dir)))
   (defn code-text [text] (format "```%s```" text))
@@ -115,7 +115,8 @@
           (if (not= exit 0) (action {:output output :title title :branch branch}))))))
 
 
-  (defn init-project []
+  (defn init-project
+    []
     (let [{dir :clone-dir repository :repository-uri} config]
       (if-not (.exists (io/file dir))
         (git-clone repository dir))))
