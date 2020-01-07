@@ -113,7 +113,7 @@
     [name action]
     (let [{title :title branch :branch command :command} (name (:commands config))]
       (if-not
-       (and
+       (or
         (pull-request-created? (my-pull-requests branch))
         (issue-created? (my-issues) title))
         (let [{exit :exit output :out} (run-shell-cmd command)]
