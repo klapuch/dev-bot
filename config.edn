@@ -6,6 +6,6 @@
   :phpcs {:command "(cd /tmp && ls)" :branch "bot-phpcs" :title "CS: Command PHPCS failed"}
   :phpcbf {:command "" :branch "bot-phpcs" :title "CS: PHPCBF fixes"}
   :eslint {:command "(cd /tmp && ls -l)" :branch "bot-eslint" :title "CS: eslint failed"}
-  :eslintFix {:command "" :branch "bot-eslint" :title "CS: eslint fixes"}
+  :eslint-fix {:command "" :branch "bot-eslint" :title "CS: eslint fixes"}
  }
 }

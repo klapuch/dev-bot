@@ -26,7 +26,7 @@
   (defn checkout-branch! [name] (run-shell-cmd (format "git checkout %s" name)))
   (defn checkout-cmd-branch! [name] (checkout-branch! (:branch (name (:commands config)))))
 
-  (defn with-api-path [path] (format "%s/%s" (:url http-settings) path))
+  (defn with-api-path [path] (format "%s/%s" (:base-url http-settings) path))
 
   (def issues-url (with-api-path (:issue-path http-settings)))
   (def pull-request-url (with-api-path (:pull-request-path http-settings)))
@@ -72,22 +72,22 @@
   (defn pull-request-created? [pull-requests] (not-empty? pull-requests))
 
   (defn create-issue!
-    [body title]
-    (let [{url :url headers :headers issue-path :issue-path} http-settings]
+    [{:keys [output title]}]
+    (let [{headers :headers issue-path :issue-path} http-settings]
       (do
         (checkout-branch! "master")
         (client/post
          issues-url
          {:headers headers
           :content-type :json
-          :body (json/generate-string {:title title :body (code-text body)})}
+          :body (json/generate-string {:title title :body (code-text output)})}
          )
         )
     ))
 
   (defn send-pull-request!
-    [title branch]
-    (let [{url :url headers :headers pull-request-path :pull-request-path user :user} http-settings]
+    [{:keys [branch title]}]
+    (let [{headers :headers pull-request-path :pull-request-path user :user} http-settings]
       (do
         (run-shell-cmd (add-git-changes-command branch title))
         (client/post
@@ -99,22 +99,24 @@
 
   (defn check!
     [name action]
-    (let [{title :title branch :brach command :command} (name (:commands config))]
+    (let [{title :title branch :branch command :command} (name (:commands config))]
       (if-not
        (and
         (pull-request-created? (my-pull-requests branch))
         (issue-created? (my-issues) title))
         (let [{exit :exit output :out} (run-shell-cmd command)]
-          (if (not= exit 0) (action output title))))))
+          (if (not= exit 0) (action {:output output :title title :branch branch}))))))
 
 
-;  (send-pull-request! "test" "bot-phpcs")
-  (check! :phpcbf #(send-pull-request! %2 "bot-phpcs"))
-  (check! :phpstan create-issue!) ;; ref
-  (check! :phpcs create-issue!)
-  ;; deref (@) phpstan
-  (check! :eslintFix #(send-pull-request! %2 "bot-eslint"))
-  (check! :eslint create-issue!)
+  (def phpcbf (future (check! :phpcbf send-pull-request!)))
+  (def eslint-fix (future (check! :eslint-fix send-pull-request!)))
+  @phpcbf
+  (def phpcs (future (check! :phpcs create-issue!)))
+  (def phpstan (future (check! :phpstan create-issue!)))
+  @eslint-fix
+  (def eslint (future (check! :eslint create-issue!)))
+  @phpcs
+  @phpstan
 
   (shutdown-agents)
 )
