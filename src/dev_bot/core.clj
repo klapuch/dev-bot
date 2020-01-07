@@ -46,18 +46,6 @@
 
   (defn format-branch [username branch] (format "%s:%s" username branch))
 
-  (defn add-git-changes-command
-    [branch message]
-    (let [commands [
-      "git checkout master"
-      (format "git checkout -b %s" branch)
-      "git add -A"
-      (format "git commit -m '%s'" message)
-      (format "git push origin %s" branch)]]
-
-      (str/join " && " commands)
-    ))
-
   (defn my-issues
     []
     (let [{body :body} (client/get (format "%s?%s" issues-url (to-query-params {"filter" "created" "state" "open"})))]
@@ -100,9 +88,15 @@
     (let [
         {headers :headers pull-request-path :pull-request-path} http-settings
         {user :user} config
+        commands [
+          "git checkout master"
+          (format "git checkout -b %s" branch)
+          "git add -A"
+          (format "git commit -m '%s'" title)
+          (format "git push origin %s" branch)]
       ]
       (do
-        (run-shell-cmd (add-git-changes-command branch title))
+        (run-shell-cmd (str/split " && " commands))
         (client/post
          pull-request-url
          {:headers headers
@@ -129,7 +123,7 @@
   (defn prepare-project
     []
     (run-shell-cmd
-      (let [commands ["git clean -fd" "git checkout --" "git checkout master" "git pull"]]
+      (let [commands ["git clean -fd" "git checkout -- ." "git checkout master" "git pull"]]
         (str/join " && " commands)))
     )
 
