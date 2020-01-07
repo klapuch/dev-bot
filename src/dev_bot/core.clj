@@ -83,7 +83,7 @@
        )
     ))
 
-  (defn send-pull-request!
+  (defn send-pull-request! ;; TODO: check for changes
     [{:keys [branch title]}]
     (let [
         {headers :headers pull-request-path :pull-request-path} http-settings
@@ -131,13 +131,14 @@
 
   (init-project)
   (prepare-project)
-  (def composer-outdated (future (check! :composer-outdated create-issue!)))
+  (check! :composer-outdated create-issue!)
+  ;(def composer-outdated (future (check! :composer-outdated create-issue!)))
   (check! :phpcbf send-pull-request!)
+  (check! :phpcs create-issue!)
+  (check! :phpstan create-issue!)
   (check! :eslint-fix send-pull-request!)
   (check! :eslint create-issue!)
-  (check! :phpstan create-issue!)
-  (check! :phpcs create-issue!)
-  @composer-outdated
+  ; @composer-outdated
 
   (shutdown-agents)
 )
