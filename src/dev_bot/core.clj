@@ -86,7 +86,7 @@
        )
     ))
 
-  (defn send-pull-request! ;; TODO: check for changes
+  (defn send-pull-request!
     [{:keys [branch title]}]
     (if (any-changes?)
       (let [
@@ -117,7 +117,7 @@
         (pull-request-created? (my-pull-requests branch))
         (issue-created? (my-issues) title))
         (let [{exit :exit output :out} (run-shell-cmd command)]
-          (if (= exit 0) (action {:output output :title title :branch branch}))))))
+          (if (not= exit 0) (action {:output output :title title :branch branch}))))))
 
 
   (defn init-project
