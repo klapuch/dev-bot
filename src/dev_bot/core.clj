@@ -112,7 +112,7 @@
         (pull-request-created? (my-pull-requests branch))
         (issue-created? (my-issues) title))
         (let [{exit :exit output :out} (run-shell-cmd command)]
-          (if (not= exit 0) (action {:output output :title title :branch branch}))))))
+          (if (= exit 0) (action {:output output :title title :branch branch}))))))
 
 
   (defn init-project
