@@ -3,6 +3,7 @@
   (:require [clj-http.client :as client])
   (:require [cheshire.core :as json])
   (:require [clojure.string :as str])
+  (:require [clojure.java.io :as io])
   (:gen-class))
 
 (defn -main
@@ -14,13 +15,14 @@
     [params]
     (str/join "&" (map #(str/join "=" [%1 %2]) (keys params) (vals params)))
   )
-  (defn run-shell-cmd [command] (sh "sh" "-c" command))
+  (defn run-shell-cmd [command] (sh "sh" "-c" command)) ;; TODO: specify dir
 
 
   ;; load configs
   (def config (load-file "config.edn"))
   (def http-settings (load-file "http-settings.edn"))
 
+  (defn git-clone [repository dir] (run-shell-cmd (format "git clone --branch=master %s %s" repository dir)))
   (defn code-text [text] (format "```%s```" text))
 
   (defn checkout-branch! [name] (run-shell-cmd (format "git checkout %s" name)))
@@ -28,8 +30,19 @@
 
   (defn with-api-path [path] (format "%s/%s" (:base-url http-settings) path))
 
-  (def issues-url (with-api-path (:issue-path http-settings)))
-  (def pull-request-url (with-api-path (:pull-request-path http-settings)))
+  (def issues-url
+    (with-api-path
+      (-> (:issue-path http-settings)
+          (str/replace #"\{:user\}" (:user config))
+          (str/replace #"\{:repo\}" (:repository-name config))))
+    )
+
+  (def pull-request-url
+    (with-api-path
+     (-> (:pull-request-path http-settings)
+         (str/replace #"\{:user\}" (:user config))
+         (str/replace #"\{:repo\}" (:repository-name config))))
+    )
 
   (defn format-branch [username branch] (format "%s:%s" username branch))
 
@@ -54,7 +67,7 @@
   (defn my-pull-requests
     [branch]
     (let [
-      {user :user} http-settings
+      {user :user} config
       {body :body} (client/get (format "%s?%s" pull-request-url (to-query-params {"head" (format-branch user branch) "state" "open"})))
     ]
       (json/parse-string body true)))
@@ -74,20 +87,20 @@
   (defn create-issue!
     [{:keys [output title]}]
     (let [{headers :headers issue-path :issue-path} http-settings]
-      (do
-        (checkout-branch! "master")
-        (client/post
-         issues-url
-         {:headers headers
-          :content-type :json
-          :body (json/generate-string {:title title :body (code-text output)})}
-         )
-        )
+      (client/post
+       issues-url
+       {:headers headers
+        :content-type :json
+        :body (json/generate-string {:title title :body (code-text output)})}
+       )
     ))
 
   (defn send-pull-request!
     [{:keys [branch title]}]
-    (let [{headers :headers pull-request-path :pull-request-path user :user} http-settings]
+    (let [
+        {headers :headers pull-request-path :pull-request-path} http-settings
+        {user :user} config
+      ]
       (do
         (run-shell-cmd (add-git-changes-command branch title))
         (client/post
@@ -108,15 +121,27 @@
           (if (not= exit 0) (action {:output output :title title :branch branch}))))))
 
 
-  (def phpcbf (future (check! :phpcbf send-pull-request!)))
-  (def eslint-fix (future (check! :eslint-fix send-pull-request!)))
-  @phpcbf
-  (def phpcs (future (check! :phpcs create-issue!)))
-  (def phpstan (future (check! :phpstan create-issue!)))
-  @eslint-fix
-  (def eslint (future (check! :eslint create-issue!)))
-  @phpcs
-  @phpstan
+  (defn init-project []
+    (let [{dir :clone-dir repository :repository-uri} config]
+      (if-not (.exists (io/file dir))
+        (git-clone repository dir))))
+
+  (defn prepare-project
+    []
+    (run-shell-cmd
+      (let [commands ["git clean -fd" "git checkout --" "git checkout master" "git pull"]]
+        (str/join " && " commands)))
+    )
+
+  (init-project)
+  (prepare-project)
+  (def composer-outdated (future (check! :composer-outdated create-issue!)))
+  (check! :phpcbf send-pull-request!)
+  (check! :eslint-fix send-pull-request!)
+  (check! :eslint create-issue!)
+  (check! :phpstan create-issue!)
+  (check! :phpcs create-issue!)
+  @composer-outdated
 
   (shutdown-agents)
 )

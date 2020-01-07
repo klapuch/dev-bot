@@ -1,7 +1,10 @@
 {
- :repository "git@github.com:klapuch/dev-bot.git"
- :dir "/tmp/dev-bot_projects"
+ :repository-uri "https://github.com/klapuch/dev-bot.git"
+ :repository-name "dev-bot"
+ :user "klapuch"
+ :clone-dir "/tmp/dev-bot"
  :commands {
+  :composer-outdated {:command "(cd /tmp && ls -la)" :title "Composer: outdated packages"}
   :phpstan {:command "(cd /tmp && ls -la)" :branch "master" :title "Command PHPStan failed"}
   :phpcs {:command "(cd /tmp && ls)" :branch "bot-phpcs" :title "CS: Command PHPCS failed"}
   :phpcbf {:command "" :branch "bot-phpcs" :title "CS: PHPCBF fixes"}
