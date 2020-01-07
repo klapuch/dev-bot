@@ -33,7 +33,7 @@
 
   (defn format-branch [username branch] (format "%s:%s" username branch))
 
-  (defn prepare-pull-request-branch
+  (defn add-git-changes-command
     [branch message]
     (let [commands [
       "git checkout master"
@@ -45,18 +45,6 @@
       (str/join " && " commands)
     ))
 
-  (defn send-pull-request!
-    [title branch]
-    (let [{url :url headers :headers pull-request-path :pull-request-path user :user} http-settings]
-      (do
-        (run-shell-cmd (prepare-pull-request-branch branch title))
-        (client/post
-         pull-request-url
-         {:headers headers
-          :content-type :json
-          :body (json/generate-string {:title title :head (format-branch user branch) :base "master"})}
-      ))))
-
   (defn my-issues
     []
     (let [{body :body} (client/get (format "%s?%s" issues-url (to-query-params {"filter" "created" "state" "open"})))]
@@ -64,23 +52,21 @@
   ))
 
   (defn my-pull-requests
-    [name]
+    [branch]
     (let [
       {user :user} http-settings
-      {branch :branch} (name (:commands config))
       {body :body} (client/get (format "%s?%s" pull-request-url (to-query-params {"head" (format-branch user branch) "state" "open"})))
     ]
       (json/parse-string body true)))
 
   (defn issue-created?
-    [issues name]
+    [issues title]
     (not-empty?
-      (let [{title :title} (name (:commands config))]
-        (->> issues
-          (map #(:title %1))
-          (map str/trim)
-          (filter #(= (str/trim title) %1))
-      )))
+      (->> issues
+        (map #(:title %1))
+        (map str/trim)
+        (filter #(= (str/trim title) %1))
+      ))
     )
 
   (defn pull-request-created? [pull-requests] (not-empty? pull-requests))
@@ -99,15 +85,27 @@
         )
     ))
 
+  (defn send-pull-request!
+    [title branch]
+    (let [{url :url headers :headers pull-request-path :pull-request-path user :user} http-settings]
+      (do
+        (run-shell-cmd (add-git-changes-command branch title))
+        (client/post
+         pull-request-url
+         {:headers headers
+          :content-type :json
+          :body (json/generate-string {:title title :head (format-branch user branch) :base "master"})}
+      ))))
+
   (defn check!
     [name action]
-    (if-not
-     (and
-      (pull-request-created? (my-pull-requests name))
-      (issue-created? (my-issues) name))
-      (let [{cmd :command title :title} (name (:commands config))
-            {exit :exit output :out} (run-shell-cmd cmd)]
-      (if (not= exit 0) (action output title)))))
+    (let [{title :title branch :brach command :command} (name (:commands config))]
+      (if-not
+       (and
+        (pull-request-created? (my-pull-requests branch))
+        (issue-created? (my-issues) title))
+        (let [{exit :exit output :out} (run-shell-cmd command)]
+          (if (not= exit 0) (action output title))))))
 
 
 ;  (send-pull-request! "test" "bot-phpcs")
