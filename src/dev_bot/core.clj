@@ -11,6 +11,7 @@
 
   ;; utils functions
   (def not-empty? (complement empty?))
+  (def not-blank? (complement blank?))
   (defn to-query-params
     [params]
     (str/join "&" (map #(str/join "=" [%1 %2]) (keys params) (vals params)))
@@ -29,6 +30,8 @@
   (defn checkout-cmd-branch! [name] (checkout-branch! (:branch (name (:commands config)))))
 
   (defn with-api-path [path] (format "%s/%s" (:base-url http-settings) path))
+
+  (def any-changes? [] (not-blank? (:out (run-shell-cmd "git status -s"))))
 
   (def issues-url
     (with-api-path
@@ -85,25 +88,26 @@
 
   (defn send-pull-request! ;; TODO: check for changes
     [{:keys [branch title]}]
-    (let [
-        {headers :headers pull-request-path :pull-request-path} http-settings
-        {user :user} config
-        commands [
-          "git checkout master"
-          (format "git checkout -b %s" branch)
-          "git add -A"
-          (format "git commit -m '%s'" title)
-          (format "git push origin %s" branch)
+    (if (any-changes?)
+      (let [
+          {headers :headers pull-request-path :pull-request-path} http-settings
+          {user :user} config
+          commands [
+            "git checkout master"
+            (format "git checkout -b %s" branch)
+            "git add -A"
+            (format "git commit -m '%s'" title)
+            (format "git push origin %s" branch)
+          ]
         ]
-      ]
-      (do
-        (run-shell-cmd (str/join " && " commands))
-        (client/post
-         pull-request-url
-         {:headers headers
-          :content-type :json
-          :body (json/generate-string {:title title :head (format-branch user branch) :base "master"})}
-      ))))
+        (do
+          (run-shell-cmd (str/join " && " commands))
+          (client/post
+           pull-request-url
+           {:headers headers
+            :content-type :json
+            :body (json/generate-string {:title title :head (format-branch user branch) :base "master"})}
+      )))))
 
   (defn check!
     [name action]
