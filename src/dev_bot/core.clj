@@ -86,22 +86,27 @@
        )
     ))
 
+  (defn prepare-pull-request-branch!
+    [branch message]
+    (let [commands [
+      "git checkout master"
+      (format "git checkout -b %s" branch)
+      "git add -A"
+      (format "git commit -m '%s'" message)
+      (format "git push origin %s" branch)]
+      command (str/join " && " commands)]
+      (run-shell-cmd command)
+    ))
+
   (defn send-pull-request!
     [{:keys [branch title]}]
     (if (any-changes?)
       (let [
           {headers :headers pull-request-path :pull-request-path} http-settings
           {user :user} config
-          commands [
-            "git checkout master"
-            (format "git checkout -b %s" branch)
-            "git add -A"
-            (format "git commit -m '%s'" title)
-            (format "git push origin %s" branch)
-          ]
         ]
         (do
-          (run-shell-cmd (str/join " && " commands))
+          (prepare-pull-request-branch! branch title)
           (client/post
            pull-request-url
            {:headers headers
@@ -120,21 +125,21 @@
           (if (not= exit 0) (action {:output output :title title :branch branch}))))))
 
 
-  (defn init-project
+  (defn init-project!
     []
     (let [{dir :clone-dir repository :repository-uri} config]
       (if-not (.exists (io/file dir))
         (git-clone repository dir))))
 
-  (defn prepare-project
+  (defn prepare-project!
     []
     (run-shell-cmd
       (let [commands ["git clean -fd" "git checkout -- ." "git checkout master" "git pull"]]
         (str/join " && " commands)))
     )
 
-  (init-project)
-  (prepare-project)
+  (init-project!)
+  (prepare-project!)
   (check! :composer-outdated create-issue!)
   ;(def composer-outdated (future (check! :composer-outdated create-issue!)))
   (check! :phpcbf send-pull-request!)
