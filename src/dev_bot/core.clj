@@ -11,7 +11,7 @@
 
   ;; utils functions
   (def not-empty? (complement empty?))
-  (def not-blank? (complement blank?))
+  (def not-blank? (complement str/blank?))
   (defn to-query-params
     [params]
     (str/join "&" (map #(str/join "=" [%1 %2]) (keys params) (vals params)))
