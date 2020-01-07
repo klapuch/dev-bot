@@ -93,10 +93,11 @@
           (format "git checkout -b %s" branch)
           "git add -A"
           (format "git commit -m '%s'" title)
-          (format "git push origin %s" branch)]
+          (format "git push origin %s" branch)
+        ]
       ]
       (do
-        (run-shell-cmd (str/split " && " commands))
+        (run-shell-cmd (str/join " && " commands))
         (client/post
          pull-request-url
          {:headers headers
