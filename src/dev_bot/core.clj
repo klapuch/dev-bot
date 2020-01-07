@@ -122,9 +122,9 @@
 
   (defn prepare-project
     []
-    (print (run-shell-cmd
+    (run-shell-cmd
       (let [commands ["git clean -fd" "git checkout -- ." "git checkout master" "git pull"]]
-        (str/join " && " commands))))
+        (str/join " && " commands)))
     )
 
   (init-project)
