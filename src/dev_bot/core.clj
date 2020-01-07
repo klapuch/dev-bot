@@ -31,7 +31,7 @@
 
   (defn with-api-path [path] (format "%s/%s" (:base-url http-settings) path))
 
-  (def any-changes? [] (not-blank? (:out (run-shell-cmd "git status -s"))))
+  (defn any-changes? [] (not-blank? (:out (run-shell-cmd "git status -s"))))
 
   (def issues-url
     (with-api-path
